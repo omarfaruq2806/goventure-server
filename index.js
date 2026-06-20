@@ -7,7 +7,7 @@ const port = process.env.PORT;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.MONGODB_URI;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -44,15 +44,30 @@ async function run() {
 
     // for ticket getting
     app.get("/api/tickets", async (req, res) => {
-      const { vendorEmail } = req.query;
+      const { vendorEmail, status } = req.query;
       let query = {};
       if (vendorEmail) {
         query.vendorEmail = vendorEmail;
       }
-      //   if (status) {
-      //     query.verificationStatus = status;
-      //   }
+      if (status) {
+        query.status = status;
+      }
       const result = await ticketCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // for upadet ticket
+    app.patch("/api/tickets/:id", async (req, res) => {
+      const { id } = req.params;
+      const updatedData = req.body;
+      console.log(updatedData, "from patch API");
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const updateDoc = {
+        $set: updatedData,
+      };
+      const result = await ticketCollection.updateOne(query, updateDoc);
       res.send(result);
     });
   } finally {
