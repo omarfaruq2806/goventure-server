@@ -56,6 +56,16 @@ async function run() {
       res.send(result);
     });
 
+    // for getting a single ticket
+    app.get("/api/tickets/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await ticketCollection.findOne(query);
+      res.send(result);
+    });
+
     // for upadet ticket
     app.patch("/api/tickets/:id", async (req, res) => {
       const { id } = req.params;
@@ -70,6 +80,46 @@ async function run() {
       const result = await ticketCollection.updateOne(query, updateDoc);
       res.send(result);
     });
+
+    // for booking a ticket
+    app.post("/api/bookings", async (req, res) => {
+      const ticket = req.body;
+      const result = await bookingCollection.insertOne(ticket);
+      res.send(result);
+    });
+
+    // for getting booking data
+    app.get("/api/bookings", async (req, res) => {
+      const { userEmail, vendorEmail, status } = req.query;
+      let query = {};
+      if (userEmail) {
+        query.userEmail = userEmail;
+      }
+      if (vendorEmail) {
+        query.vendorEmail = vendorEmail;
+      }
+      if (status) {
+        query.status = status;
+      }
+      const result = await bookingCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // for updating booking data
+    app.patch("/api/bookings/:id", async (req, res) => {
+      const { id } = req.params;
+      const updatedData = req.body;
+      console.log(updatedData, "from patch API");
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const updateDoc = {
+        $set: updatedData,
+      };
+      const result = await bookingCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+    
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
