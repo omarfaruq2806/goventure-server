@@ -34,6 +34,7 @@ async function run() {
     const userCollection = db.collection("user");
     const ticketCollection = db.collection("tickets");
     const bookingCollection = db.collection("bookings");
+    const transectionCollection = db.collection("transections");
 
     // for ticket adding
     app.post("/api/tickets", async (req, res) => {
@@ -119,7 +120,46 @@ async function run() {
       const result = await bookingCollection.updateOne(query, updateDoc);
       res.send(result);
     });
-    
+
+    // for transaction
+    app.post("/api/transections", async (req, res) => {
+      const transection = req.body;
+
+      const isExists = await transectionCollection.findOne({
+        bookingId: transection.bookingId,
+      });
+
+      if (isExists) {
+        return res.send({ message: "Transaction already exists" });
+      }
+
+      const result = await transectionCollection.insertOne(transection);
+
+      await bookingCollection.updateOne(
+        { _id: new ObjectId(transection.bookingId) },
+        {
+          $set: {
+            status: "paid",
+            paidAt: new Date(),
+          },
+        },
+      );
+
+      const ticket = await ticketCollection.findOne({
+        _id: new ObjectId(transection.ticketId),
+      });
+
+      await ticketCollection.updateOne(
+        { _id: new ObjectId(transection.ticketId) },
+        {
+          $inc: { quantity: -transection.quantity },
+        },
+      );
+
+      res.send(result);
+    });
+
+    // for getting transection data
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
