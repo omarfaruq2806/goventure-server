@@ -39,13 +39,14 @@ async function run() {
     // for ticket adding
     app.post("/api/tickets", async (req, res) => {
       const ticket = req.body;
-      const result = await ticketCollection.insertOne(ticket);
+      const newTicket = { ...ticket, createdAt: new Date() };
+      const result = await ticketCollection.insertOne(newTicket);
       res.send(result);
     });
 
     // for ticket getting
     app.get("/api/tickets", async (req, res) => {
-      const { vendorEmail, status } = req.query;
+      const { vendorEmail, status, isAdvertised } = req.query;
       let query = {};
       if (vendorEmail) {
         query.vendorEmail = vendorEmail;
@@ -53,7 +54,20 @@ async function run() {
       if (status) {
         query.status = status;
       }
+      if (isAdvertised !== undefined && isAdvertised !== "") {
+        query.isAdvertised = isAdvertised === "true";
+      }
       const result = await ticketCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // for newst
+    app.get("/api/tickets/latest", async (req, res) => {
+      const result = await ticketCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .toArray();
       res.send(result);
     });
 
@@ -82,7 +96,7 @@ async function run() {
       res.send(result);
     });
 
-    // for ticket delete by vendor 
+    // for ticket delete by vendor
     app.delete("/api/tickets/:id", async (req, res) => {
       const { id } = req.params;
       console.log(id);
