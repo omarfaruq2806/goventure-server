@@ -67,7 +67,7 @@ async function run() {
       res.send(result);
     });
 
-    // for upadet ticket
+    // for  upadete ticket
     app.patch("/api/tickets/:id", async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
@@ -79,6 +79,17 @@ async function run() {
         $set: updatedData,
       };
       const result = await ticketCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    // for ticket delete by vendor 
+    app.delete("/api/tickets/:id", async (req, res) => {
+      const { id } = req.params;
+      console.log(id);
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await ticketCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -121,20 +132,20 @@ async function run() {
       res.send(result);
     });
 
-    // for transaction
+    // for saving transaction
     app.post("/api/transections", async (req, res) => {
       const transection = req.body;
-
       const isExists = await transectionCollection.findOne({
         bookingId: transection.bookingId,
       });
-
       if (isExists) {
         return res.send({ message: "Transaction already exists" });
       }
-
-      const result = await transectionCollection.insertOne(transection);
-
+      const transectionData = {
+        ...transection,
+        createdAt: new Date(),
+      };
+      const result = await transectionCollection.insertOne(transectionData);
       await bookingCollection.updateOne(
         { _id: new ObjectId(transection.bookingId) },
         {
@@ -144,22 +155,34 @@ async function run() {
           },
         },
       );
-
       const ticket = await ticketCollection.findOne({
         _id: new ObjectId(transection.ticketId),
       });
-
       await ticketCollection.updateOne(
         { _id: new ObjectId(transection.ticketId) },
         {
           $inc: { quantity: -transection.quantity },
         },
       );
-
       res.send(result);
     });
 
     // for getting transection data
+    app.get("/api/transections", async (req, res) => {
+      const { userEmail, vendorEmail, status } = req.query;
+      let query = {};
+      if (userEmail) {
+        query.userEmail = userEmail;
+      }
+      if (vendorEmail) {
+        query.vendorEmail = vendorEmail;
+      }
+      if (status) {
+        query.status = status;
+      }
+      const result = await transectionCollection.find(query).toArray();
+      res.send(result);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
