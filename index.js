@@ -63,7 +63,8 @@ async function run() {
 
     // for public route
     app.get("/api/tickets/public", async (req, res) => {
-      const { status, isAdvertised } = req.query;
+      const { status, isAdvertised, page = 1, limit = 6 } = req.query;
+      const skip = Number(page - 1) * Number(limit);
       const query = {};
       if (status) {
         query.status = status;
@@ -71,8 +72,19 @@ async function run() {
       if (isAdvertised !== undefined && isAdvertised !== "") {
         query.isAdvertised = isAdvertised === "true";
       }
-      const result = await ticketCollection.find(query).toArray();
-      res.send(result);
+      const totalCount = await ticketCollection.countDocuments(query);
+      const totalPages = Math.ceil(totalCount / Number(limit));
+      const result = await ticketCollection
+        .find(query)
+        .skip(skip)
+        .limit(Number(limit))
+        .toArray();
+      res.send({
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: totalPages,
+        data: result,
+      });
     });
 
     // for newst
