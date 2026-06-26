@@ -44,13 +44,27 @@ async function run() {
       res.send(result);
     });
 
-    // for ticket getting
+    // for ticket getting ( in private route)
     app.get("/api/tickets", async (req, res) => {
       const { vendorEmail, status, isAdvertised } = req.query;
       let query = {};
       if (vendorEmail) {
         query.vendorEmail = vendorEmail;
       }
+      if (status) {
+        query.status = status;
+      }
+      if (isAdvertised !== undefined && isAdvertised !== "") {
+        query.isAdvertised = isAdvertised === "true";
+      }
+      const result = await ticketCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // for public route
+    app.get("/api/tickets/public", async (req, res) => {
+      const { status, isAdvertised } = req.query;
+      const query = {};
       if (status) {
         query.status = status;
       }
