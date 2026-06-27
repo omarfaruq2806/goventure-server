@@ -24,10 +24,11 @@ app.get("/", (req, res) => {
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers;
   console.log("authHeader", authHeader);
-  if (!authHeader || !authHeader.Authorization) {
+  if (!authHeader || !authHeader.authorization) {
     return res.status(401).send({ message: "Unauthorized" });
   }
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.authorization.split(" ")[1];
+  console.log(token, "from token server");
   req.token = token;
   next();
 };
@@ -56,7 +57,7 @@ async function run() {
     });
 
     // for ticket getting ( in private route)
-    app.get("/api/tickets", async (req, res) => {
+    app.get("/api/tickets", verifyToken, async (req, res) => {
       const { vendorEmail, status, isAdvertised } = req.query;
       let query = {};
       if (vendorEmail) {
@@ -114,7 +115,7 @@ async function run() {
     });
 
     // for getting a single ticket
-    app.get("/api/tickets/:id", async (req, res) => {
+    app.get("/api/tickets/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const query = {
         _id: new ObjectId(id),
@@ -124,7 +125,7 @@ async function run() {
     });
 
     // for  upadete ticket
-    app.patch("/api/tickets/:id", async (req, res) => {
+    app.patch("/api/tickets/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
       console.log(updatedData, "from patch API");
@@ -139,7 +140,7 @@ async function run() {
     });
 
     // for ticket delete by vendor
-    app.delete("/api/tickets/:id", async (req, res) => {
+    app.delete("/api/tickets/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       console.log(id);
       const query = {
@@ -150,14 +151,14 @@ async function run() {
     });
 
     // for booking a ticket
-    app.post("/api/bookings", async (req, res) => {
+    app.post("/api/bookings", verifyToken, async (req, res) => {
       const ticket = req.body;
       const result = await bookingCollection.insertOne(ticket);
       res.send(result);
     });
 
     // for getting booking data
-    app.get("/api/bookings", async (req, res) => {
+    app.get("/api/bookings", verifyToken, async (req, res) => {
       const { userEmail, vendorEmail, status } = req.query;
       let query = {};
       if (userEmail) {
@@ -174,7 +175,7 @@ async function run() {
     });
 
     // for updating booking data
-    app.patch("/api/bookings/:id", async (req, res) => {
+    app.patch("/api/bookings/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
       console.log(updatedData, "from patch API");
@@ -189,7 +190,7 @@ async function run() {
     });
 
     // for saving transaction
-    app.post("/api/transections", async (req, res) => {
+    app.post("/api/transections", verifyToken, async (req, res) => {
       const transection = req.body;
       const isExists = await transectionCollection.findOne({
         bookingId: transection.bookingId,
@@ -224,7 +225,7 @@ async function run() {
     });
 
     // for getting transection data
-    app.get("/api/transections", async (req, res) => {
+    app.get("/api/transections", verifyToken, async (req, res) => {
       const { userEmail, vendorEmail, status } = req.query;
       let query = {};
       if (userEmail) {
