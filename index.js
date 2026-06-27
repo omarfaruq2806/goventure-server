@@ -21,6 +21,17 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers;
+  console.log("authHeader", authHeader);
+  if (!authHeader || !authHeader.Authorization) {
+    return res.status(401).send({ message: "Unauthorized" });
+  }
+  const token = authHeader.split(" ")[1];
+  req.token = token;
+  next();
+};
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -89,8 +100,13 @@ async function run() {
 
     // for newst
     app.get("/api/tickets/latest", async (req, res) => {
+      const { status } = req.query;
+      const query = {};
+      if (status) {
+        query.status = status;
+      }
       const result = await ticketCollection
-        .find()
+        .find(query)
         .sort({ createdAt: -1 })
         .limit(6)
         .toArray();
