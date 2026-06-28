@@ -42,12 +42,10 @@ const transectionCollection = db.collection("transections");
 // verify token
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers;
-  console.log("authHeader", authHeader);
   if (!authHeader || !authHeader.authorization) {
     return res.status(401).send({ message: "Unauthorized" });
   }
   const token = authHeader.authorization.split(" ")[1];
-  console.log(token, "from token server");
   req.token = token;
 
   const query = { token: token };
@@ -303,6 +301,7 @@ app.post(
         $inc: { quantity: -transection.quantity },
       },
     );
+    console.log("Ticket quantity updated successfully", result);
     res.send(result);
   },
 );
